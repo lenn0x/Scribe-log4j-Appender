@@ -23,6 +23,7 @@ import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.log4j.spi.ThrowableInformation;
 import scribe.LogEntry;
 import scribe.scribe.Client;
 
@@ -117,7 +118,18 @@ public void configureScribe() {
             connect();
 
             try {
-                String message = String.format("%s %s", hostname, layout.format(loggingEvent));
+                StringBuffer stackTrace = new StringBuffer();
+                if (loggingEvent.getThrowableInformation() != null) {
+                    String[] stackTraceArray = loggingEvent.getThrowableInformation().getThrowableStrRep();
+
+                    String nextLine;
+
+                    for (int i = 0; i < stackTraceArray.length; i++) {
+                      nextLine = stackTraceArray[i] + "\n";
+                      stackTrace.append(nextLine);
+                    }
+                }
+                String message = String.format("%s %s %s", hostname, layout.format(loggingEvent), stackTrace.toString());
                 LogEntry entry = new LogEntry(scribe_category, message);
 
                 logEntries.add(entry);
